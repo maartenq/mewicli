@@ -1,13 +1,17 @@
 # Makefile
 
-VERSION := $(shell git describe --tags)
-
 .PHONY: poetry
 poetry: ## Install the poetry environment and install the pre-commit hooks.
 	@echo "🚀 Creating virtual environment using pyenv and poetry"
 	@poetry install
 	@poetry run pre-commit install
 	@poetry shell
+
+.PHONY: tag
+tag: ## Set annotated tag from Poetry's version on this commit.
+	@echo "🚀 Setting annotated tag from Poetry version on this commit."
+	$(eval $@_VERSION := $(shell poetry version --short))
+	@git tag --force --annotate "$($@_VERSION)" --message "$($@_VERSION)"
 
 .PHONY: poetry-clean
 poetry-clean: ## Remove the poetry environment.
