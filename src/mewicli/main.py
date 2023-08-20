@@ -9,7 +9,6 @@ import requests
 # https://www.mediawiki.org/wiki/API:Edit
 # POST requests containing large amounts of text content (8000+ characters)
 # should be sent with Content-Type: multipart/form-data
-# https://gist.github.com/kazqvaizer/4cebebe5db654a414132809f9f88067b
 
 
 def multipartify(
@@ -17,14 +16,33 @@ def multipartify(
     parent_key=None,
     formatter: Callable | None = None,
 ) -> dict:
+    """
+    From https://gist.github.com/kazqvaizer/4cebebe5db654a414132809f9f88067b
+
+    Here is a way to flatten python dictionaries for making
+    multipart/form-data POST requests.
+
+    {
+        "some": ["balls", "toys"],
+        "field": "value",
+        "nested": {"objects": "here"},
+    }
+
+        =>
+
+    {
+        "some[0]": "balls",
+        "some[1]": "toys",
+        "field": "value",
+        "nested[objects]": "here",
+    }
+
+    """
     if formatter is None:
         formatter = lambda v: (None, v)  # noqa E731
-
     if not isinstance(data, dict):
         return {parent_key: formatter(data)}
-
     converted: list = []
-
     for key, value in data.items():
         current_key = key if parent_key is None else f"{parent_key}[{key}]"
         if isinstance(value, dict):
@@ -39,7 +57,6 @@ def multipartify(
                 )
         else:
             converted.append((current_key, formatter(value)))
-
     return dict(converted)
 
 

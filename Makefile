@@ -1,22 +1,28 @@
 # Makefile
 
 .PHONY: poetry
-poetry: ## Install the poetry environment and install the pre-commit hooks.
+poetry: ## Install the poetry environment and install the pre-commit hooks
 	@echo "🚀 Creating virtual environment using pyenv and poetry"
 	@poetry install
 	@poetry run pre-commit install
 	@poetry shell
+
+docs/requirements.txt: poetry.lock
+	@echo "🚀 Create or update docs/requirements.txt"
+	@poetry export --with=docs --without-hashes --output=docs/requirements.txt
+
+poetry.lock: pyproject.toml
+	@echo "🚀 Create or update poetry.lock"
+	@poetry update
+
+.PHONY: update
+update: docs/requirements.txt ## Update the dependencies as according to the pyproject.toml file
 
 .PHONY: tag
 tag: ## Set annotated tag from Poetry's version on this commit.
 	@echo "🚀 Setting annotated tag from Poetry version on this commit."
 	$(eval $@_VERSION := $(shell poetry version --short))
 	@git tag --force --annotate "$($@_VERSION)" --message "$($@_VERSION)"
-
-.PHONY: poetry-clean
-poetry-clean: ## Remove the poetry environment.
-	@echo "🚀 Creating virtual environment using pyenv and poetry"
-	@poetry env remove --all
 
 .PHONY: check
 check: ## Run code quality tools.
@@ -50,27 +56,6 @@ build: clean-build ## Build wheel file using poetry
 .PHONY: clean-build
 clean-build: ## clean build artifacts
 	@rm -rf dist
-
-.PHONY: clean-git-ls
-clean-git-ls: ## Dry run removing untracked files from the working tree (using `git clean`).
-	@echo "🚀 Dry run removing untracked files from the working tree (using `git clean`)."
-	git clean --dry-run -x -d
-
-.PHONY: clean-git
-clean-git: ## Remove untracked files from the working tree (using `git clean`).
-	@echo "🚀 Removing untracked files from the working tree (using `git clean`)."
-	git clean --force -x -d
-
-.PHONY: clean-pyc
-clean-pyc: ## Remove Python file artifacts.
-	@echo "🚀 Removing Python file artifacts."
-	find . -name '*.pyc' -exec rm -f {} + || true
-	find . -name '*.pyo' -exec rm -f {} + || true
-	find . -name '*~' -exec rm -f {} + || true
-	find . -name '__pycache__' -exec rm -rf {} + || true
-
-.PHONY: clean
-clean: clean-build clean-pyc clean-git  ## Clean all
 
 .PHONY: publish
 publish: ## publish a release to pypi.
