@@ -4,4 +4,4 @@ Mewicli is simple CLI for uploading and downloading pages to MediaWiki.
 
 ## Usage
 
-    mewecli help
+    mewecli --help

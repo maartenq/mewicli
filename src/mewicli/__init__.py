@@ -4,7 +4,7 @@
 Mewicli is simple CLI for uploading and downloading pages to MediaWiki."
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __title__ = "mewicli"
 __description__ = (
     "Mewicli is simple CLI for uploading and downloading pages to MediaWiki."
