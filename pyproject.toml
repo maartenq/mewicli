@@ -15,7 +15,7 @@ homepage = "https://gitlhub.com/maartenq/mewicli"
 repository = "https://gitlhub.com/maartenq/mewicli"
 keywords = ["mediawiki",]
 classifiers = [
-    "Development Status :: 2 Pre-Alpha",
+    "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "License :: OSI Approved :: Apache Software License",
     "License :: OSI Approved :: MIT License",
