@@ -1,88 +1,92 @@
-# src/mewicli/main.py
+# src/mewicli/cli.py
 
-from __future__ import annotations  # for Python 3.7-3.9
-
-import os
-from typing import Annotated
+from typing import Annotated, Optional
 
 import typer
+from rich.console import Console
 
-app = typer.Typer()
+from .main import MediaWiki
+
+app = typer.Typer(help="A simple cli for MediaWiki api actions.")
+
+error_console = Console(stderr=True)
 
 
-@app.command()
-def download(
-    url: Annotated[str, typer.Option(help="URL of MediaWiki site.")] = "",
-    username: Annotated[str, typer.Option(help="username of API user.")] = "",
-    password: Annotated[str, typer.Option(help="password of API user.")] = "",
-    filename: Annotated[
-        str, typer.Option(help="Filename to wiki text to.")
-    ] = "",
-    pagename: Annotated[
-        str, typer.Option(help="Name of the page to download.")
-    ] = "",
-):
-    """
-    Download a wiki page from a MediaWiki.
-    """
-    MEDIAWIKI_URL = url or os.environ.get(
-        "MEDIAWIKI_URL", "http://localhost/w/api.php"
+def creds_or_raise_error(
+    url: str | None,
+    username: str | None,
+    password: str | None,
+) -> tuple[str, str, str]:
+    error = False
+    optenvvar = (
+        (url, "url", "MEDIAWIKI_URL"),
+        (username, "username", "MEDIAWIKI_USERNAME"),
+        (password, "password", "MEDIAWIKI_PASSWORD"),
     )
-    MEDIAWIKI_USERNAME = username or os.environ.get(
-        "MEDIAWIKI_USERNAME", "ingrid"
-    )
-    MEDIAWIKI_PASSWORD = password or os.environ.get(
-        "MEDIAWIKI_PASSWORD", "henk123"
-    )
-    MEDIAWIKI_FILENAME = filename or os.environ.get(
-        "MEDIAWIKI_FILENAME", "README.wiki"
-    )
-    MEDIAWIKI_PAGENAME = pagename or os.environ.get(
-        "MEDIAWIKI_PAGENAME", "does_not_exist"
-    )
-    print(f"url: {MEDIAWIKI_URL}")
-    print(f"username: {MEDIAWIKI_USERNAME}")
-    print(f"password: {MEDIAWIKI_PASSWORD}")
-    print(f"filename: {MEDIAWIKI_FILENAME}")
-    print(f"pagename: {MEDIAWIKI_PAGENAME}")
+    for opt, opt_name, envvar_name in optenvvar:
+        if opt is None:
+            error_console.print(
+                f"Either option `{opt_name}` or environment variable"
+                f" `{envvar_name}` must be set."
+            )
+            error = True
+    if error:
+        raise typer.Exit(code=2)
+    return (url, username, password)  # type: ignore
 
 
 @app.command()
-def upload(
-    url: Annotated[str, typer.Option(help="URL of MediaWiki site.")] = "",
-    username: Annotated[str, typer.Option(help="username of API user.")] = "",
-    password: Annotated[str, typer.Option(help="password of API user.")] = "",
+def update(
+    title: Annotated[
+        str,
+        typer.Argument(
+            help="Name of the page to upload.",
+        ),
+    ],
     filename: Annotated[
         str,
-        typer.Option(help="Filename of wiki text to upload."),
-    ] = "",
-    pagename: Annotated[
-        str, typer.Option(help="Name of the page to upload.")
-    ] = "",
+        typer.Argument(
+            help="Filename of wiki text to upload.",
+        ),
+    ],
+    url: Annotated[
+        Optional[str],  # noqa: UP007
+        typer.Option(
+            envvar="MEDIAWIKI_URL",
+            help="URL of MediaWiki.",
+        ),
+    ] = None,
+    username: Annotated[
+        Optional[str],  # noqa: UP007
+        typer.Option(
+            envvar="MEDIAWIKI_USERNAME",
+            help="Username of API user.",
+        ),
+    ] = None,
+    password: Annotated[
+        Optional[str],  # noqa: UP007
+        typer.Option(
+            envvar="MEDIAWIKI_PASSWORD",
+            help="Password of API user.",
+        ),
+    ] = None,
 ):
     """
-    Upload a wiki page from a MediaWiki.
+    Update the contents of MediaWiki page from file.
     """
-    MEDIAWIKI_URL = url or os.environ.get(
-        "MEDIAWIKI_URL", "http://localhost/w/api.php"
-    )
-    MEDIAWIKI_USERNAME = username or os.environ.get(
-        "MEDIAWIKI_USERNAME", "ingrid"
-    )
-    MEDIAWIKI_PASSWORD = password or os.environ.get(
-        "MEDIAWIKI_PASSWORD", "henk123"
-    )
-    MEDIAWIKI_FILENAME = filename or os.environ.get(
-        "MEDIAWIKI_FILENAME", "README.wiki"
-    )
-    MEDIAWIKI_PAGENAME = pagename or os.environ.get(
-        "MEDIAWIKI_PAGENAME", "does_not_exist"
-    )
-    print(f"url: {MEDIAWIKI_URL}")
-    print(f"username: {MEDIAWIKI_USERNAME}")
-    print(f"password: {MEDIAWIKI_PASSWORD}")
-    print(f"filename: {MEDIAWIKI_FILENAME}")
-    print(f"pagename: {MEDIAWIKI_PAGENAME}")
+    url, username, password = creds_or_raise_error(url, username, password)
+    mediawiki = MediaWiki(url)
+    mediawiki.login(username, password)
+    print(f"title: {title}")
+    print(f"filename: {filename}")
+    print(f"url: {url}")
+    print(f"username: {username}")
+    print(f"password: {password}")
+
+
+@app.callback()
+def callback():
+    pass
 
 
 if __name__ == "__main__":
